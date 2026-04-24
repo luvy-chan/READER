@@ -27,6 +27,34 @@
             background: #333; color: #fff; font-weight: bold; 
         }
 
+        /* 讓抽屜展開時稍微有一點背景色區隔 */
+        details[open] summary {
+            color: #000;
+        }
+        
+        summary {
+            list-style: none; /* 隱藏預設箭頭（部分瀏覽器） */
+            display: flex;
+            align-items: center;
+        }
+
+        summary::before {
+            content: "▹"; /* 自訂箭頭符號 */
+            margin-right: 8px;
+            transition: 0.2s;
+        }
+
+        details[open] summary::before {
+            transform: rotate(90deg); /* 展開時箭頭向下 */
+        }
+
+/* 讓子選單的連結稍微縮排 */
+.file-link {
+    margin-left: 5px;
+    border-left: 1px solid #ccc;
+    border-radius: 0;
+}
+
         /* 閱讀區：置中排版 */
         #viewer { 
             flex-grow: 1; overflow-y: auto; display: flex; justify-content: center; 
@@ -126,25 +154,63 @@
     }
 
     // 初始化讀取清單
-    fetch('list.txt')
-        .then(res => res.text())
-        .then(data => {
-            const files = data.split('\n').map(f => f.trim()).filter(f => f !== "");
-            const listDiv = document.getElementById('file-list');
-            listDiv.innerHTML = "";
+fetch('list.txt')
+    .then(res => res.text())
+    .then(data => {
+        const files = data.split('\n').map(f => f.trim()).filter(f => f !== "");
+        const listDiv = document.getElementById('file-list');
+        listDiv.innerHTML = "";
+
+        const folders = {}; // 用來存放資料夾結構
+
+        files.forEach(fileName => {
+            const parts = fileName.split('/');
             
-            files.forEach(fileName => {
-                const div = document.createElement('div');
-                div.className = 'file-link';
-                div.innerText = fileName.split('.')[0];
-                div.onclick = () => {
-                    document.querySelectorAll('.file-link').forEach(el => el.classList.remove('active'));
-                    div.classList.add('active');
-                    loadFile(fileName);
-                };
-                listDiv.appendChild(div);
-            });
+            if (parts.length > 1) {
+                // 有資料夾的情況
+                const folderName = parts[0];
+                const displayName = parts[1].split('.')[0];
+
+                if (!folders[folderName]) {
+                    // 建立抽屜結構
+                    const details = document.createElement('details');
+                    details.style.marginBottom = "5px";
+                    const summary = document.createElement('summary');
+                    summary.innerText = folderName;
+                    summary.style.padding = "10px";
+                    summary.style.cursor = "pointer";
+                    summary.style.color = "#666";
+                    summary.style.fontWeight = "bold";
+                    
+                    const subContainer = document.createElement('div');
+                    subContainer.style.paddingLeft = "15px";
+                    
+                    details.appendChild(summary);
+                    details.appendChild(subContainer);
+                    listDiv.appendChild(details);
+                    
+                    folders[folderName] = subContainer;
+                }
+                createLink(fileName, displayName, folders[folderName]);
+            } else {
+                // 沒資料夾，直接放最外層
+                createLink(fileName, fileName.split('.')[0], listDiv);
+            }
         });
+
+        function createLink(fullPath, shortName, container) {
+            const div = document.createElement('div');
+            div.className = 'file-link';
+            div.innerText = shortName;
+            div.onclick = (e) => {
+                e.stopPropagation(); // 防止點擊連結時觸發抽屜開關
+                document.querySelectorAll('.file-link').forEach(el => el.classList.remove('active'));
+                div.classList.add('active');
+                loadFile(fullPath);
+            };
+            container.appendChild(div);
+        }
+    });
 </script>
 
 </body>
