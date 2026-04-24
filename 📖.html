@@ -221,8 +221,7 @@
             try {
                 // --- 需求 2：處理 ID: 內容 的格式 ---
                 const json = JSON.parse(text);
-                const isMobile = window.innerWidth <= 600; // 偵測是否為手機
-                const separator = isMobile ? ':<br>' : ': '; // 手機版加換行，電腦版維持原樣
+                const separator = ':<br>';
 
                 // 遍歷 JSON 的每一個 Key (ID) 和 Value (對話)
                 Object.entries(json).forEach(([id, content]) => {
