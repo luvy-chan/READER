@@ -225,7 +225,7 @@
 
                 // 遍歷 JSON 的每一個 Key (ID) 和 Value (對話)
                 Object.entries(json).forEach(([id, content]) => {
-                    html += `<div class="line"><strong style="color:#666; font-size: 0.9em;">${id}:</strong><br>${highlight(content)}</div>`;
+                    html += `<div class="line"><strong style="color:#666; font-size: 0.9em;">${id}</strong><br>${highlight(content)}</div>`;
                 });
             } catch (e) {
                 // 如果不是 JSON，當作純文字處理
