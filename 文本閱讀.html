@@ -108,7 +108,7 @@
     function highlight(text) {
         if (!text) return "";
         // 匹配所有英文、數字、半形標點 (排除中文與全形符號)
-        const regex = /([a-zA-Z]+)|([0-9]+)|([\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]+)|星/g;
+        const regex = /([a-zA-Z]+)|([0-9]+)|([\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]+)|(星)/g;
         
         return text.replace(regex, (match, en, num, punc, kanji) => {
             if (en) return `<span class="hl-en">${en}</span>`;
