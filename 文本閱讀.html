@@ -14,6 +14,8 @@
         }
         
         /* 側邊書籤列：簡潔灰色，不傷眼 */
+        <button id="menu-toggle">☰ 目錄</button>
+        <div id="overlay"></div>
         #sidebar { 
             width: 200px; background: #e0e0e0; border-right: 1px solid #d0d0d0; 
             overflow-y: auto; flex-shrink: 0; padding: 10px;
@@ -38,22 +40,31 @@
             align-items: center;
         }
 
+        /* 修改箭頭符號與顏色 */
         summary::before {
-            content: "▹"; /* 自訂箭頭符號 */
+            content: "▸"; /* 關閉時顯示資料夾圖示 */
             margin-right: 8px;
-            transition: 0.2s;
+            font-size: 14px;
+            filter: grayscale(1); /* 沒點開時灰色 */
         }
 
         details[open] summary::before {
-            transform: rotate(90deg); /* 展開時箭頭向下 */
+            content: "▾"; /* 展開時顯示開啟的資料夾 */
+            filter: grayscale(0); /* 點開後恢復顏色 */
         }
 
-/* 讓子選單的連結稍微縮排 */
-.file-link {
-    margin-left: 5px;
-    border-left: 1px solid #ccc;
-    border-radius: 0;
-}
+        /* 讓沒有資料夾的檔案連結看起來跟資料夾有區隔 */
+        .file-link:not(details .file-link) {
+            border-left: 4px solid #ccc;
+            margin-left: 10px;
+        }
+
+        /* 讓子選單的連結稍微縮排 */
+        .file-link {
+            margin-left: 5px;
+            border-left: 1px solid #ccc;
+            border-radius: 0;
+        }
 
         /* 閱讀區：置中排版 */
         #viewer { 
@@ -82,11 +93,74 @@
         .hl-punc { color: #a1b5c2; font-weight: 350; }  /* 半形標點：藍色 */
         .hl-sp { color: #c0392b; font-weight: 500; } /* 漢字顏色 */
 
-        @media (max-width: 600px) {
-            body { flex-direction: column; }
-            #sidebar { width: 100%; height: 25%; }
-            #article-container { padding: 30px 15px; }
-        }
+   
+    #sidebar { 
+        width: 100%; 
+        height: 30vh; /* 側邊欄固定佔螢幕 30% 高 */
+        border-right: none; 
+        border-bottom: 1px solid #d0d0d0; 
+        overflow-y: auto; /* 讓目錄可以自己捲動 */
+        box-sizing: border-box;
+    }
+    
+    #menu-toggle, #overlay { display: none; } /* 隱藏手機版按鈕與遮罩 */
+
+    @media (max-width: 600px) {
+    /* 把側邊欄藏到左邊螢幕外 */
+    #sidebar {
+        position: fixed;
+        left: 0; top: 0;
+        height: 100vh;
+        width: 280px;
+        transform: translateX(-100%); /* 預設在外面 */
+    }
+    /* 當 active 時滑進來 */
+    #sidebar.active {
+        transform: translateX(0);
+    }
+
+    /* 顯示按鈕 */
+    #menu-toggle {
+        display: block;
+        position: fixed;
+        top: 20px; right: 20px; /* 放在右下角方便拇指點擊 */
+        padding: 12px 20px;
+        background: #333; color: #fff;
+        border: none; border-radius: 50px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        z-index: 1001;
+        cursor: pointer;
+    }
+
+    /* 遮罩層：開啟選單時讓後面變暗 */
+    #overlay.active {
+        display: block;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: transparent;
+        z-index: 999;
+    }
+
+    #viewer { width: 100%; }
+    #article-container { padding: 40px 15px; width: 92%; }
+}
+
+    #viewer {
+        width: 100%;
+        height: 70vh; /* 剩下的 70% 給閱讀區 */
+    }
+
+    #article-container { 
+        padding: 20px 15px; 
+        width: 95%; /* 減少間距，讓手機畫面寬一點 */
+        margin: 0 auto;
+    }
+    
+    .line {
+        font-size: 16px; /* 手機版字體稍微縮小一點點點，比較好讀 */
+    }
+}
     </style>
 </head>
 <body>
@@ -120,38 +194,49 @@
     }
 
     async function loadFile(fileName) {
-        const titleEl = document.getElementById('title');
-        const contentEl = document.getElementById('content');
+    const titleEl = document.getElementById('title');
+    const contentEl = document.getElementById('content');
+
+    // --- 需求 1：標題改成 【A】B–C ---
+    const parts = fileName.split('/');
+    if (parts.length > 1) {
+        const folder = parts[0];
+        // 取得剩下的部分，移除副檔名，並用 – 連接
+        const rest = parts.slice(1).map(p => p.split('.')[0]).join('–');
+        titleEl.innerText = `【${folder}】${rest}`;
+    } else {
         titleEl.innerText = fileName.split('.')[0];
-        contentEl.innerHTML = "讀取中...";
+    }
+
+    contentEl.innerHTML = "讀取中...";
+
+    try {
+        const res = await fetch(`data/${encodeURIComponent(fileName.trim())}`);
+        if (!res.ok) throw new Error('檔案讀取失敗');
+        
+        const text = await res.text();
+        let html = "";
 
         try {
-            const res = await fetch(`data/${encodeURIComponent(fileName.trim())}`);
-            if (!res.ok) throw new Error('檔案讀取失敗');
-            
-            const text = await res.text();
-            let html = "";
+            // --- 需求 2：處理 ID: 內容 的格式 ---
+            const json = JSON.parse(text);
+            const isMobile = window.innerWidth <= 600; // 偵測是否為手機
+            const separator = isMobile ? ':<br>' : ': '; // 手機版加換行，電腦版維持原樣
 
-            try {
-                // 嘗試解析 JSON
-                const json = JSON.parse(text);
-                const list = Array.isArray(json) ? json : [json];
-                list.forEach(line => {
-                    const speaker = line.name || line.speaker || "";
-                    const content = line.text || line.content || "";
-                    const prefix = speaker ? `<strong>${speaker}:</strong> ` : "";
-                    html += `<div class="line">${prefix}${highlight(content)}</div>`;
-                });
-            } catch (e) {
-                // 如果不是 JSON，就當作純文字
-                html = `<div class="line" style="white-space: pre-wrap;">${highlight(text)}</div>`;
-            }
-            contentEl.innerHTML = html;
-            document.getElementById('viewer').scrollTo(0, 0); // 切換章節時回到頂部
+            // 遍歷 JSON 的每一個 Key (ID) 和 Value (對話)
+            Object.entries(json).forEach(([id, content]) => {
+                html += `<div class="line"><strong>${id}${separator}</strong>${highlight(content)}</div>`;
+            });
         } catch (e) {
-            contentEl.innerHTML = `<div style="color:#c0392b">錯誤：${e.message}</div>`;
+            // 如果不是 JSON，當作純文字處理
+            html = `<div class="line" style="white-space: pre-wrap;">${highlight(text)}</div>`;
         }
+        contentEl.innerHTML = html;
+        document.getElementById('viewer').scrollTo(0, 0); 
+    } catch (e) {
+        contentEl.innerHTML = `<div style="color:#c0392b">錯誤：${e.message}</div>`;
     }
+}
 
     // 初始化讀取清單
 fetch('list.txt')
@@ -224,6 +309,35 @@ fetch('list.txt')
             container.appendChild(div);
         }
     });
+      const menuToggle = document.getElementById('menu-toggle');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('overlay');
+
+      // 開啟/關閉選單
+      function toggleMenu() {
+          sidebar.classList.toggle('active');
+          overlay.classList.toggle('active');
+      }
+
+      menuToggle.onclick = toggleMenu;
+      overlay.onclick = toggleMenu; // 點擊暗色遮罩也會收起選單
+
+      // 修改原有的 createLink，讓它選完章節自動收起選單
+      function createLink(fullPath, shortName, container) {
+          const div = document.createElement('div');
+          div.className = 'file-link';
+          div.innerText = shortName;
+          div.onclick = (e) => {
+              e.stopPropagation();
+              document.querySelectorAll('.file-link').forEach(el => el.classList.remove('active'));
+              div.classList.add('active');
+              loadFile(fullPath);
+        
+              // 選完檔案後，如果是手機版就自動關閉選單
+              if (window.innerWidth <= 600) toggleMenu();
+          };
+          container.appendChild(div);
+      }
 </script>
 
 </body>
