@@ -230,12 +230,16 @@
 
             try {
                 const json = JSON.parse(text);
-    
+
                 Object.entries(json).forEach(([id, content]) => {
-                    html += `<div class="line"><strong style="color:#666; font-size: 0.9em; display: block; margin-bottom: 5px;">${id}</strong>${highlight(content)}</div>`;
+                    const formatted = content.replace(/:/g, ':\n');
+                    html += `<div class="line" style="white-space: pre-wrap;">
+                        <strong style="color:#666; font-size: 0.9em; display: block; margin-bottom: 5px;">${id}</strong>
+                        ${highlight(formatted)}
+                    </div>`;
                 });
             } catch (e) {
-                html = `<div class="line" style="white-space: pre-wrap;">${highlight(text)}</div>`;
+                html = `<div class="line" style="white-space: pre-wrap;">${highlight(text.replace(/:/g, ':\n'))}</div>`;
             }
                         contentEl.innerHTML = html;
                         document.getElementById('viewer').scrollTo(0, 0); 
