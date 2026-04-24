@@ -3,82 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>劇本閱覽器 v2</title>
+    <title>劇本閱覽器 v3</title>
     <style>
-        /* 1. 護眼底色：使用輕微的淺灰色 */
+        /* 全域護眼淺灰底 */
         body { 
-            background: #f4f4f4; color: #333; 
+            background: #ebebeb; color: #333; 
             font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; 
             margin: 0; display: flex; height: 100vh; 
         }
         
-        /* 2. 書籤按鈕樣式優化 (不傷眼) */
+        /* 側邊書籤列：簡潔灰色，不傷眼 */
         #sidebar { 
-            width: 200px; background: #fff; border-right: 1px solid #e0e0e0; 
+            width: 200px; background: #e0e0e0; border-right: 1px solid #d0d0d0; 
             overflow-y: auto; flex-shrink: 0; padding: 10px;
         }
         .file-link { 
-            padding: 12px; cursor: pointer; border-radius: 6px; margin-bottom: 5px;
-            font-size: 14px; color: #666; transition: 0.2s;
+            padding: 12px; cursor: pointer; border-radius: 4px; margin-bottom: 5px;
+            font-size: 14px; color: #555; transition: 0.2s;
         }
-        .file-link:hover { background: #eee; }
-        /* 取消傷眼藍色，改用深灰與側邊條強調 */
+        .file-link:hover { background: #d5d5d5; }
         .file-link.active { 
-            background: #e8e8e8; color: #000; font-weight: bold; 
-            border-left: 4px solid #888; 
+            background: #333; color: #fff; font-weight: bold; 
         }
 
-        /* 3. 置中文章式排版 */
+        /* 閱讀區：置中排版 */
         #viewer { 
             flex-grow: 1; overflow-y: auto; display: flex; justify-content: center; 
+            background: #ebebeb; /* 確保底色一致 */
         }
         #article-container {
-            width: 90%; max-width: 800px; /* 限制寬度，像閱讀器一樣 */
-            background: #ffffff; margin: 40px 0; padding: 50px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-radius: 2px;
-            min-height: calc(100vh - 80px);
+            width: 90%; max-width: 850px; /* 寬度適中，不要滿版 */
+            padding: 60px 20px; 
+            min-height: 100vh;
         }
         
-        #title { border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 30px; }
-        .line { margin-bottom: 15px; line-height: 1.8; font-size: 17px; }
+        #title { border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 40px; }
+        .line { margin-bottom: 18px; line-height: 1.8; font-size: 18px; word-break: break-all; }
         
-        /* 上色邏輯 - 顏色調得柔和一點 */
-        .hl-en { color: #b35900; }    /* 英文 */
-        .hl-num { color: #2e7d32; }   /* 數字 */
-        .hl-punc { color: #1976d2; }  /* 半形標點 */
+        /* 顏色：選擇顯眼但不刺眼的配色 */
+        .hl-en { color: #c0392b; font-weight: 500; }    /* 英文：紅褐色 */
+        .hl-num { color: #1e8449; font-weight: bold; }   /* 數字：深綠 */
+        .hl-punc { color: #2980b9; font-weight: bold; }  /* 半形標點：藍色 */
 
         @media (max-width: 600px) {
             body { flex-direction: column; }
             #sidebar { width: 100%; height: 25%; }
-            #article-container { padding: 20px; margin: 10px; }
+            #article-container { padding: 30px 15px; }
         }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <strong style="display:block; padding:10px; color:#999;">目錄書籤</strong>
+    <strong style="display:block; padding:10px; color:#666;">目錄書籤</strong>
     <div id="file-list">載入中...</div>
 </div>
 
 <div id="viewer">
     <div id="article-container">
-        <h2 id="title">請選擇章節</h2>
+        <h1 id="title">請選擇章節</h1>
         <div id="content"></div>
     </div>
 </div>
 
 <script>
-    // 增強版上色邏輯：更精確抓取半形標點
+    // 終極上色邏輯：單次掃描避免重複取代
     function highlight(text) {
         if (!text) return "";
-        return text
-            // 1. 先處理半形標點 (包含常見的遊戲對話符號)
-            .replace(/[\.,!?"':;\[\]\(\)\-\/\+\=\*\&\^\%\$\#\@\~\`\<\>\{\}\\]+/g, '<span class="hl-punc">$&</span>')
-            // 2. 處理數字
-            .replace(/[0-9]+/g, '<span class="hl-num">$&</span>')
-            // 3. 處理英文單字
-            .replace(/[a-zA-Z]+/g, '<span class="hl-en">$&</span>');
+        // 匹配所有英文、數字、半形標點 (排除中文與全形符號)
+        const regex = /([a-zA-Z]+)|([0-9]+)|([\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]+)/g;
+        
+        return text.replace(regex, (match, en, num, punc) => {
+            if (en) return `<span class="hl-en">${en}</span>`;
+            if (num) return `<span class="hl-num">${num}</span>`;
+            if (punc) return `<span class="hl-punc">${punc}</span>`;
+            return match;
+        });
     }
 
     async function loadFile(fileName) {
@@ -88,36 +88,34 @@
         contentEl.innerHTML = "讀取中...";
 
         try {
-            // 重要：使用 encodeURIComponent 處理中文檔名與特殊字元
-            const encodedName = encodeURIComponent(fileName.trim());
-            const res = await fetch(`data/${encodedName}`);
-            
-            if (!res.ok) throw new Error('找不到檔案');
+            const res = await fetch(`data/${encodeURIComponent(fileName.trim())}`);
+            if (!res.ok) throw new Error('檔案讀取失敗');
             
             const text = await res.text();
             let html = "";
 
-            // 判斷是否為 JSON (即便沒副檔名也可以嘗試解析)
             try {
+                // 嘗試解析 JSON
                 const json = JSON.parse(text);
-                if (Array.isArray(json)) {
-                    json.forEach(line => {
-                        // 支援 JSON 裡面的 name 或 speaker 欄位
-                        const name = line.name || line.speaker || "---";
-                        html += `<div class="line"><strong>${name}:</strong> ${highlight(line.text || line.content)}</div>`;
-                    });
-                }
+                const list = Array.isArray(json) ? json : [json];
+                list.forEach(line => {
+                    const speaker = line.name || line.speaker || "";
+                    const content = line.text || line.content || "";
+                    const prefix = speaker ? `<strong>${speaker}:</strong> ` : "";
+                    html += `<div class="line">${prefix}${highlight(content)}</div>`;
+                });
             } catch (e) {
-                // 解析失敗就當作純文字 (TXT) 處理
-                html = `<div style="white-space: pre-wrap;">${highlight(text)}</div>`;
+                // 如果不是 JSON，就當作純文字
+                html = `<div class="line" style="white-space: pre-wrap;">${highlight(text)}</div>`;
             }
             contentEl.innerHTML = html;
+            document.getElementById('viewer').scrollTo(0, 0); // 切換章節時回到頂部
         } catch (e) {
-            contentEl.innerHTML = `<div style="color:red">讀取失敗：${e.message}<br>請檢查 data 資料夾內是否有「${fileName}」</div>`;
+            contentEl.innerHTML = `<div style="color:#c0392b">錯誤：${e.message}</div>`;
         }
     }
 
-    // 讀取清單
+    // 初始化讀取清單
     fetch('list.txt')
         .then(res => res.text())
         .then(data => {
@@ -138,5 +136,6 @@
             });
         });
 </script>
+
 </body>
 </html>
