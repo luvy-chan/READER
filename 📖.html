@@ -219,26 +219,20 @@
             let html = "";
 
             try {
-                // --- 需求 2：處理 ID: 內容 的格式 ---
                 const json = JSON.parse(text);
-                const separator = ':<br>';
-
-                // 遍歷 JSON 的每一個 Key (ID) 和 Value (對話)
+    
                 Object.entries(json).forEach(([id, content]) => {
-                    const displayId = id.replace(':', ':<br>');
-                        html += `<div class="line"><strong style="color:#666; font-size: 0.9em;">${displayId}</strong>${highlight(content)}</div>`;
-                    });
+                    html += `<div class="line"><strong style="color:#666; font-size: 0.9em;">${id}:</strong><br>${highlight(content)}</div>`;
                 });
             } catch (e) {
-                // 如果不是 JSON，當作純文字處理
                 html = `<div class="line" style="white-space: pre-wrap;">${highlight(text)}</div>`;
             }
-            contentEl.innerHTML = html;
-            document.getElementById('viewer').scrollTo(0, 0); 
-        } catch (e) {
-            contentEl.innerHTML = `<div style="color:#c0392b">錯誤：${e.message}</div>`;
-        }
-    }
+                        contentEl.innerHTML = html;
+                        document.getElementById('viewer').scrollTo(0, 0); 
+                    } catch (e) {
+                        contentEl.innerHTML = `<div style="color:#c0392b">錯誤：${e.message}</div>`;
+                    }
+                }
 
     // 開啟/關閉選單
     function toggleMenu() {
