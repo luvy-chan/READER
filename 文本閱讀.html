@@ -225,7 +225,10 @@
 
             // 遍歷 JSON 的每一個 Key (ID) 和 Value (對話)
             Object.entries(json).forEach(([id, content]) => {
-                html += `<div class="line"><strong>${id}${separator}</strong>${highlight(content)}</div>`;
+                const isMobile = window.innerWidth <= 600;
+                // 直接把 separator 寫死成帶有換行的格式
+                const separator = isMobile ? ':<br>' : ': ';
+                html += `<div class="line"><strong style="color:#666; font-size: 0.9em;">${id}${separator}</strong>${highlight(content)}</div>`;
             });
         } catch (e) {
             // 如果不是 JSON，當作純文字處理
