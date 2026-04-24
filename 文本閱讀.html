@@ -163,40 +163,53 @@ fetch('list.txt')
 
         const folders = {}; // 用來存放資料夾結構
 
-        files.forEach(fileName => {
-            const parts = fileName.split('/');
-            
-            if (parts.length > 1) {
-                // 有資料夾的情況
-                const folderName = parts[0];
-                const displayName = parts[1].split('.')[0];
+   files.forEach(fileName => {
+       const parts = fileName.split('/'); 
+       const isFolder = parts.length > 1;
 
-                if (!folders[folderName]) {
-                    // 建立抽屜結構
-                    const details = document.createElement('details');
-                    details.style.marginBottom = "5px";
-                    const summary = document.createElement('summary');
-                    summary.innerText = folderName;
-                    summary.style.padding = "10px";
-                    summary.style.cursor = "pointer";
-                    summary.style.color = "#666";
-                    summary.style.fontWeight = "bold";
-                    
-                    const subContainer = document.createElement('div');
-                    subContainer.style.paddingLeft = "15px";
-                    
-                    details.appendChild(summary);
-                    details.appendChild(subContainer);
-                    listDiv.appendChild(details);
-                    
-                    folders[folderName] = subContainer;
-                }
-                createLink(fileName, displayName, folders[folderName]);
-            } else {
-                // 沒資料夾，直接放最外層
-                createLink(fileName, fileName.split('.')[0], listDiv);
-            }
-        });
+       if (isFolder) {
+           let currentParent = listDiv; // 從最外層開始找
+           let currentPath = ""; // 用來當作 folders 的唯一索引
+
+           // 跑迴圈處理「除了最後一個檔案名以外」的所有資料夾
+           for (let i = 0; i < parts.length - 1; i++) {
+               const folderName = parts[i];
+               currentPath += (currentPath ? '/' : '') + folderName; // 建立完整路徑 key
+
+               if (!folders[currentPath]) {
+                   // 如果這層資料夾還沒建立過，就建立它
+                   const details = document.createElement('details');
+                   details.style.marginBottom = "5px";
+                   const summary = document.createElement('summary');
+                   summary.innerText = folderName;
+                   summary.style.padding = "10px";
+                   summary.style.cursor = "pointer";
+                   summary.style.color = "#666";
+                   summary.style.fontWeight = "bold";
+
+                   const subContainer = document.createElement('div');
+                   subContainer.style.paddingLeft = "15px";
+
+                   details.appendChild(summary);
+                   details.appendChild(subContainer);
+                   currentParent.appendChild(details);
+
+                   // 把這個新的容器存起來，供下一層或下一個檔案使用
+                   folders[currentPath] = subContainer;
+               }
+               // 把指標指向這一層，下一圈迴圈就會往這裡面加
+               currentParent = folders[currentPath];
+           }
+
+           // 最後一層資料夾處理完後，把檔案放進去
+           const fileDisplayName = parts[parts.length - 1].split('.')[0];
+           createLink(fileName, fileDisplayName, currentParent);
+
+       } else {
+           // 沒資料夾，直接放最外層
+           createLink(fileName, fileName.split('.')[0], listDiv);
+       }
+   });
 
         function createLink(fullPath, shortName, container) {
             const div = document.createElement('div');
