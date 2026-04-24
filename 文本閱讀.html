@@ -38,12 +38,20 @@
         }
         
         #title { border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 40px; }
-        .line { margin-bottom: 18px; line-height: 1.8; font-size: 18px; word-break: break-all; }
+        .line { 
+            margin-bottom: 18px; 
+            line-height: 1.8; 
+            font-size: 18px; 
+            word-break: break-all;
+            font-weight: 350;    
+            color: #333333;
+        }
         
         /* 顏色：選擇顯眼但不刺眼的配色 */
         .hl-en { color: #c0392b; font-weight: 500; }    /* 英文：紅褐色 */
-        .hl-num { color: #1e8449; font-weight: bold; }   /* 數字：深綠 */
-        .hl-punc { color: #2980b9; font-weight: bold; }  /* 半形標點：藍色 */
+        .hl-num { color: #a1b5c2; font-weight: 350; }   /* 數字：深綠 */
+        .hl-punc { color: #a1b5c2; font-weight: 350; }  /* 半形標點：藍色 */
+        .hl-sp { color: #c0392b; font-weight: 500; } /* 漢字顏色 */
 
         @media (max-width: 600px) {
             body { flex-direction: column; }
@@ -71,12 +79,13 @@
     function highlight(text) {
         if (!text) return "";
         // 匹配所有英文、數字、半形標點 (排除中文與全形符號)
-        const regex = /([a-zA-Z]+)|([0-9]+)|([\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]+)/g;
+        const regex = /([a-zA-Z]+)|([0-9]+)|([\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]+)|星/g;
         
-        return text.replace(regex, (match, en, num, punc) => {
+        return text.replace(regex, (match, en, num, punc, kanji) => {
             if (en) return `<span class="hl-en">${en}</span>`;
             if (num) return `<span class="hl-num">${num}</span>`;
             if (punc) return `<span class="hl-punc">${punc}</span>`;
+            if (kanji) return `<span class="hl-sp">${kanji}</span>`; // 新增這一行
             return match;
         });
     }
