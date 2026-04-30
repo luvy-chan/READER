@@ -38,16 +38,16 @@
             display: flex;
             align-items: center;
         }
-
+        
         /* 修改箭頭符號與顏色 */
-        summary::before {
+        details summary::before {
             content: "▸"; /* 關閉時顯示資料夾圖示 */
             margin-right: 8px;
             font-size: 14px;
             filter: grayscale(1); /* 沒點開時灰色 */
         }
 
-        details[open] summary::before {
+        details[open] > summary::before {
             content: "▾"; /* 展開時顯示開啟的資料夾 */
             filter: grayscale(0); /* 點開後恢復顏色 */
         }
